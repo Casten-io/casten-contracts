@@ -1,0 +1,11 @@
+.env
+*.swp
+addresses 
+out
+deployments
+.DS_Store
+config_unknown.json
+.idea
+/out
+.vscode
+hevm.libs.*
