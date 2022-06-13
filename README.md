@@ -5,7 +5,7 @@ Casten is a DeFi lending protocol where real-world businesses can borrow efficie
 
 Currently, top lending protocols in DeFi like Compound, Aave, etc need borrowers to be overcollateralized in order be able to create a borrowing position. However, Casten is uncollateralised protocol, where various participants are incentivised to secure the protocol and its funds by staking/auditing/originating etc.
 
-# commands
+# Commands
 ```
 dapp build
 ```
