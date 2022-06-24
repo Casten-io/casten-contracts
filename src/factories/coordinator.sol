@@ -2,7 +2,7 @@
 pragma solidity >=0.7.6;
 
 import { EpochCoordinator } from "./../EpochCoordinator.sol";
-import "tinlake-erc20/erc20.sol";
+import "../lib/casten-erc20/src/erc20.sol";
 import "../EpochCoordinator.sol";
 
 interface CoordinatorFactoryLike {

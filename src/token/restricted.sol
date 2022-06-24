@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.7.6;
 
-import "tinlake-erc20/erc20.sol";
+import "../lib/casten-erc20/src/erc20.sol";
 
 interface MemberlistLike {
     function hasMember(address) external view returns (bool);

@@ -2,8 +2,8 @@
 pragma solidity >=0.7.6;
 
 import "./fixed_point.sol";
-import "tinlake-auth/auth.sol";
-import "tinlake-math/math.sol";
+import "./lib/casten-auth/src/auth.sol";
+import "./lib/casten-math/src/math.sol";
 
 interface TrancheLike {
     function epochUpdate(uint epochID, uint supplyFulfillment_,

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.7.6;
 
-import "tinlake-auth/auth.sol";
+import "../lib/casten-auth/src/auth.sol";
 
 interface MemberlistLike {
     function updateMember(address usr, uint validUntil) external;

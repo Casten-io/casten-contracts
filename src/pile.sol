@@ -2,8 +2,8 @@
 // Copyright (C) 2018  Rain <rainbreak@riseup.net>, Centrifuge
 pragma solidity >=0.7.6;
 
-import "tinlake-math/interest.sol";
-import "tinlake-auth/auth.sol";
+import "./lib/casten-math/src/interest.sol";
+import "./lib/casten-auth/src/auth.sol";
 
 // ## Interest Group based Pile
 // The following is one implementation of a debt module. It keeps track of different buckets of interest rates and is optimized for many loans per interest bucket. It keeps track of interest

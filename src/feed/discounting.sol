@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.7.6;
 
-import "tinlake-math/math.sol";
+import "../lib/casten-math/src/math.sol";
 
 // contract without a state which defines the relevant formulars for the navfeed
 contract Discounting is Math {

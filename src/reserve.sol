@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.7.6;
 
-import "tinlake-math/math.sol";
-import "tinlake-auth/auth.sol";
+import "./lib/casten-math/src/math.sol";
+import "./lib/casten-auth/src/auth.sol";
 
 interface ERC20Like {
     function balanceOf(address) external view returns (uint256);
