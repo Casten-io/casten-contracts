@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Centrifuge 2020, based on MakerDAO dss https://github.com/makerdao/dss
+// Copyright (C) Casten 2022, based on MakerDAO dss https://github.com/makerdao/dss
 pragma solidity >=0.5.15;
 
 contract Auth {

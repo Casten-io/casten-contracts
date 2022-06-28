@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) 2018 Rain <rainbreak@riseup.net> and Centrifuge, referencing MakerDAO dss => https://github.com/makerdao/dss/blob/master/src/pot.sol
+// Copyright (C) 2018 Rain <rainbreak@riseup.net> and Casten, referencing MakerDAO dss => https://github.com/makerdao/dss/blob/master/src/pot.sol
 pragma solidity >=0.5.15;
 
 import "./math.sol";

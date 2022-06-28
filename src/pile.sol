@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) 2018  Rain <rainbreak@riseup.net>, Centrifuge
+// Copyright (C) 2018  Rain <rainbreak@riseup.net>, Casten
 pragma solidity >=0.7.6;
 
 import "./lib/casten-math/src/interest.sol";
