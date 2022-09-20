@@ -25,6 +25,10 @@ interface PileLike {
     function accrue(uint) external;
     function increaseDebt(uint, uint) external;
     function deccreaseDebt(uint, uint) external;
+
+    function previousDebt(uint loan) external view returns (uint);
+    function setLoanInfo(uint256 _loan, uint256 _debt, uint256 _newInterest) external;
+    function getTotalInterestAccrued(uint loan) external view returns (uint);
 }
 
 interface NAVFeedLike {
@@ -38,6 +42,10 @@ interface NAVFeedLike {
 interface ReserveLike {
     function deposit(uint currencyAmount) external;
     function payoutForLoans(uint currencyAmount) external;
+    function transferFeeOnInterest(uint _amt) external;
+    function treasury() external view returns(address);
+    function originationFeePerc() external view returns(address);
+    function feeOnInterestPerc() external view returns(address);
 }
 
 interface SubscriberLike {
@@ -124,10 +132,16 @@ contract Shelf is Auth, TitleOwned, Math {
             subscriber.borrowEvent(loan, currencyAmount);
         }
 
+        uint previousDebt = pile.previousDebt();
         pile.accrue(loan);
 
-        balances[loan] = safeAdd(balances[loan], currencyAmount);
-        balance = safeAdd(balance, currencyAmount);
+        uint loanDebt = pile.debt(loan);
+        uint interestAccrued = loanDebt - previousDebt;
+
+        uint256 originationFee = currencyAmount.mul(reserve.originationFeePerc()).div(100_00);
+        balances[loan] = safeAdd(balances[loan], (currencyAmount - originationFee));
+        balance = safeAdd(balance, (currencyAmount - originationFee));
+        require(currency.transfer(reserve.treasury(), originationFee), "fee-transfer-failed");
 
         // payout to shelf
         reserve.payoutForLoans(currencyAmount);
@@ -138,6 +152,9 @@ contract Shelf is Auth, TitleOwned, Math {
 
         // reBalance lender interest bearing amount based on new NAV
         assessor.reBalance();
+
+        uint256 totalInterest = pile.getTotalInterestAccrued(loan);
+        pile.setLoanInfo(loan, pile.debt(loan), safeAdd(interestAccrued, totalInterest));
 
         emit Borrow(loan, currencyAmount);
     }
@@ -153,7 +170,7 @@ contract Shelf is Auth, TitleOwned, Math {
         require(currency.transfer(usr, currencyAmount), "currency-transfer-failed");
         emit Withdraw(loan, currencyAmount, usr);
     }
-
+    
     // repays the entire or partial debt of a loan
     function repayLoan(uint loan, uint currencyAmount) external owner(loan) {
         require(nftLocked(loan), "nft-not-locked");
@@ -163,8 +180,11 @@ contract Shelf is Auth, TitleOwned, Math {
             subscriber.repayEvent(loan, currencyAmount);
         }
 
+        uint previousDebt = pile.previousDebt();
         pile.accrue(loan);
         uint loanDebt = pile.debt(loan);
+
+        uint interestAccrued = loanDebt - previousDebt;
 
         // only repay max loan debt
         if (currencyAmount > loanDebt) {
@@ -177,6 +197,20 @@ contract Shelf is Auth, TitleOwned, Math {
 
         // reBalance lender interest bearing amount based on new NAV
         assessor.reBalance();
+
+        uint debtAfterRepayment = pile.debt(loan);
+
+        if(currencyAmount > loanDebt || debtAfterRepayment == 0) {
+            uint interest = safeAdd(pile.getTotalInterestAccrued(loan), interestAccrued);
+            uint feeOnInterest = div(mul(interest, reserve.feeOnInterestPerc()), 100_00);
+            
+            //transfer feeOnInterest from reserve
+            reserve.transferFeeOnInterest(feeOnInterest);
+
+            pile.setLoanInfo(loan, 0, 0); //loan repaid fully, so reset the values 
+        } else {
+            pile.setLoanInfo(loan, debtAfterRepayment, interestAccrued); //debt after repayment
+        }
 
         emit Repay(loan, currencyAmount);
     }

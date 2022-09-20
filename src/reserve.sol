@@ -40,7 +40,15 @@ contract Reserve is Math, Auth {
     // total currency in the reserve
     uint public balance_;
 
+    //if reserve doesn't have enough funds while withdrawing fee, this variable in updated
+    address public treasury;
+    
+    uint public pendingInterestFee;
+    uint256 public originationFeePerc;
+    uint256 public feeOnInterestPerc;
+
     event File(bytes32 indexed what, uint amount);
+    event File(bytes32 indexed what, address value);
     event Depend(bytes32 contractName, address addr);
 
     constructor(address currency_) {
@@ -137,11 +145,41 @@ contract Reserve is Math, Auth {
         _payout(msg.sender, currencyAmount);
     }
 
+    function transferFeeOnInterest(uint _amt) external auth {
+        if(_amt < balance_) {
+            balance_ = safeSub(balance_, _amt);
+            require(currency.transferFrom(pot, treasury, _amt), "fee-payout-failed");
+        } else {
+            pendingInterestFee = safeAdd(pendingInterestFee, _amt);
+        }
+    }
+
+    function withdrawPendingFee() external auth {
+        uint _pendingInterestFee = pendingInterestFee;
+        pendingInterestFee = 0;
+        balance_ = safeSub(balance_, _pendingInterestFee);
+        require(currency.transferFrom(pot, treasury, _pendingInterestFee), "fee-payout-failed");
+    }
+
     function file(bytes32 what, uint amount) public auth {
         if (what == "currencyAvailable") {
             currencyAvailable = amount;
+        } else if(what == "originationFeePerc") {
+            //2 decimals - 100 for 1 %
+            originationFeePerc = amount;
+        } else if(what == "feeOnInterest") {
+            //2 decimals - 1000 for 10 %
+            feeOnInterestPerc = amount;
         } else revert();
         emit File(what, amount);
+    }
+
+    function file(bytes32 what, address _value) public auth {
+        if(what == "treasuryAddress") {
+            treasury = _value;
+        } else revert();
+
+        emit File(what, _value);
     }
 
     function depend(bytes32 contractName, address addr) public auth {

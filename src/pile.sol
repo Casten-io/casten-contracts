@@ -33,6 +33,11 @@ contract Pile is Auth, Interest {
     // loan => rate
     mapping (uint => uint) public loanRates;
 
+    struct LoanInfo {
+        uint256 previousDebt; //Debt at the time of the last borrow or repay event
+        uint256 interestAccrued; //total interestest accrued since loan was issued
+    }
+    mapping(uint256 => LoanInfo) public loanInfo;
 
     // Events
     event IncreaseDebt(uint indexed loan, uint currencyAmount);
@@ -48,6 +53,22 @@ contract Pile is Auth, Interest {
         
         wards[msg.sender] = 1;
         emit Rely(msg.sender);
+    }
+
+    function previousDebt(uint loan) external view returns (uint){
+        return loanInfo[loan].previousDebt;
+    }
+
+    function setLoanInfo(uint256 _loan, uint256 _debt, uint256 _newInterest) external auth {
+        LoanInfo memory info = loanInfo[_loan];
+        loanInfo[_loan] = LoanInfo({
+            previousDebt: _debt,
+            interestAccrued: safeAdd(info.interestAccrued, _newInterest)
+        });
+    }
+
+    function getTotalInterestAccrued(uint loan) external view returns (uint){
+        return loanInfo[loan].interestAccrued;
     }
 
     // returns the current debt based on actual block.timestamp (now)
