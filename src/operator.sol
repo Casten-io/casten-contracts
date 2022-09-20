@@ -28,9 +28,10 @@ contract Operator is Auth {
     RestrictedTokenLike public token;
 
     // Events
-    event SupplyOrder(uint indexed amount);
-    event RedeemOrder(uint indexed amount);
+    event SupplyOrder(uint indexed amount, address indexed usr);
+    event RedeemOrder(uint indexed amount, address indexed usr);
     event Depend(bytes32 indexed contractName, address addr);
+    event Disburse(address indexed usr);
 
     constructor(address tranche_) {
         tranche = TrancheLike(tranche_);
@@ -43,6 +44,7 @@ contract Operator is Auth {
         returns(uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken)
     {
         require((token.hasMember(msg.sender) == true), "user-not-allowed-to-hold-token");
+        emit Disburse(msg.sender);
         return tranche.disburse(msg.sender);
     }
 
@@ -50,6 +52,7 @@ contract Operator is Auth {
         returns(uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken)
     {
         require((token.hasMember(msg.sender) == true), "user-not-allowed-to-hold-token");
+        emit Disburse(msg.sender);
         return tranche.disburse(msg.sender, endEpoch);
     }
 
@@ -57,14 +60,14 @@ contract Operator is Auth {
     function supplyOrder(uint amount) public {
         require((token.hasMember(msg.sender) == true), "user-not-allowed-to-hold-token");
         tranche.supplyOrder(msg.sender, amount);
-        emit SupplyOrder(amount);
+        emit SupplyOrder(amount, msg.sender);
     }
 
     // only investors that are on the memberlist can submit redeemOrders
     function redeemOrder(uint amount) public {
         require((token.hasMember(msg.sender) == true), "user-not-allowed-to-hold-token");
         tranche.redeemOrder(msg.sender, amount);
-        emit RedeemOrder(amount);
+        emit RedeemOrder(amount, msg.sender);
     }
 
     // --- Permit Support ---
