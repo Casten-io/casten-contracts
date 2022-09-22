@@ -12,7 +12,7 @@ dapp build
 
 # Testnet Contract Addresses
 
-[Shelf](https://mumbai.polygonscan.com/address/0x459A7C7dF9F128863710A652AA9026Fe3E809DE6#readContract)
+[Shelf](https://mumbai.polygonscan.com/address/0x459A7C7dF9F128863710A652AA9026Fe3E809DE6#readContract) \
 [navFeed](https://mumbai.polygonscan.com/address/0x50F5F51d20873A7ac6B0FBcfdC02F7d7F3519566#writeContract)
 [Assessor](https://mumbai.polygonscan.com/address/0xbeDb40334Ec06010e21c6eEf08FE04E6017Ae761#writeContract) 
 [JUN Token](https://mumbai.polygonscan.com/address/0xDc27F7B1eb43FfFf707A6E128a29eDd8E60886D9#writeContract)
