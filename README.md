@@ -27,5 +27,3 @@ dapp build
 [Reserve](https://mumbai.polygonscan.com/address/0x217B4C199CA2cC3949e8c3416bCb777b88fB0fF5#writeContract) \
 
 
-
-
