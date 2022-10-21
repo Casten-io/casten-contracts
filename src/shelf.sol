@@ -199,14 +199,10 @@ contract Shelf is Auth, TitleOwned, Math {
         assessor.reBalance();
 
         uint debtAfterRepayment = pile.debt(loan);
+        uint feeOnInterest = div(mul(interest, reserve.feeOnInterestPerc()), 100_00);
+        reserve.transferFeeOnInterest(feeOnInterest);
 
         if(currencyAmount > loanDebt || debtAfterRepayment == 0) {
-            uint interest = safeAdd(pile.getTotalInterestAccrued(loan), interestAccrued);
-            uint feeOnInterest = div(mul(interest, reserve.feeOnInterestPerc()), 100_00);
-            
-            //transfer feeOnInterest from reserve
-            reserve.transferFeeOnInterest(feeOnInterest);
-
             pile.setLoanInfo(loan, 0, 0); //loan repaid fully, so reset the values 
         } else {
             pile.setLoanInfo(loan, debtAfterRepayment, interestAccrued); //debt after repayment
