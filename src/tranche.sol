@@ -25,7 +25,10 @@ interface CoordinatorLike {
     function currentEpoch() external view returns (uint);
     function lastEpochExecuted() external view returns(uint);
 }
-
+/**
+    @title Tranche
+    @notice Represents the senior and junior pool.
+ */
 contract Tranche is Math, Auth, FixedPoint {
     mapping(uint => Epoch) public epochs;
 
@@ -96,7 +99,9 @@ contract Tranche is Math, Auth, FixedPoint {
         emit Depend(contractName, addr);
     }
 
-    // supplyOrder function can be used to place or revoke an supply
+    ///@dev Used by operator to supply currency or revoke supply to the tranche
+    ///@param usr The user that is supplying currency
+    ///@param newSupplyAmount The amount of currency to supply. If entered a value less than previous supply, the difference will be revoked
     function supplyOrder(address usr, uint newSupplyAmount) public auth orderAllowed(usr) {
         users[usr].orderedInEpoch = coordinator.currentEpoch();
 
@@ -118,7 +123,9 @@ contract Tranche is Math, Auth, FixedPoint {
         }
     }
 
-    // redeemOrder function can be used to place or revoke a redeem
+    ///@dev Used by operator to redeem tokens or revoke redemption of tokens
+    ///@param usr The user that is redeeming tokens
+    ///@param newRedeemAmount The amount of tokens to redeem. If entered a value less than previous redemption amount, the difference will be revoked
     function redeemOrder(address usr, uint newRedeemAmount) public auth orderAllowed(usr) {
         users[usr].orderedInEpoch = coordinator.currentEpoch();
 
@@ -139,11 +146,12 @@ contract Tranche is Math, Auth, FixedPoint {
         }
     }
 
+    ///@dev Calculates the amounts to be disbursed until the last execute epoch
     function calcDisburse(address usr) public view returns(uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
         return calcDisburse(usr, coordinator.lastEpochExecuted());
     }
 
-    //  calculates the current disburse of a user starting from the ordered epoch until endEpoch
+    ///@dev  calculates the current disburse of a user starting from the ordered epoch until endEpoch
     function calcDisburse(address usr, uint endEpoch) public view returns(uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
         uint epochIdx = users[usr].orderedInEpoch;
         uint lastEpochExecuted = coordinator.lastEpochExecuted();
@@ -187,7 +195,8 @@ contract Tranche is Math, Auth, FixedPoint {
         return (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken);
     }
 
-    // the disburse function can be used after an epoch is over to receive currency and tokens
+    ///@dev the disburse function can be used after an epoch is over to receive currency and tokens
+    ///@param usr The user that is disburing
     function disburse(address usr) public auth returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
         return disburse(usr, coordinator.lastEpochExecuted());
     }
@@ -201,7 +210,9 @@ contract Tranche is Math, Auth, FixedPoint {
         return amount;
     }
 
-    // the disburse function can be used after an epoch is over to receive currency and tokens
+    ///@dev the disburse function can be used after an epoch is over to receive currency and tokens
+    ///@param usr The user that is disburing
+    ///@param endEpoch The epoch until which the disburse should be calculated
     function disburse(address usr,  uint endEpoch) public auth returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
         require(users[usr].orderedInEpoch <= coordinator.lastEpochExecuted(), "epoch-not-executed-yet");
 
@@ -232,7 +243,7 @@ contract Tranche is Math, Auth, FixedPoint {
     }
 
 
-    // called by epoch coordinator in epoch execute method
+    ///@dev called by epoch coordinator in epoch execute method. Only EpochCoordinator can invoke this method
     function epochUpdate(uint epochID, uint supplyFulfillment_, uint redeemFulfillment_, uint tokenPrice_, uint epochSupplyOrderCurrency, uint epochRedeemOrderCurrency) public auth {
         require(waitingForUpdate == true);
         waitingForUpdate = false;
@@ -259,6 +270,7 @@ contract Tranche is Math, Auth, FixedPoint {
         totalRedeem = safeAdd(safeTotalSub(totalRedeem, redeemInToken), rmul(redeemInToken, safeSub(ONE, epochs[epochID].redeemFulfillment)));
     }
     
+    ///@dev called by epoch coordinator to close a ongoing epoch
     function closeEpoch() public auth returns (uint totalSupplyCurrency_, uint totalRedeemToken_) {
         require(waitingForUpdate == false);
         waitingForUpdate = true;

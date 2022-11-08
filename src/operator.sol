@@ -22,7 +22,12 @@ interface EIP2612PermitLike {
 interface DaiPermitLike {
     function permit(address holder, address spender, uint256 nonce, uint256 expiry, bool allowed, uint8 v, bytes32 r, bytes32 s) external;
 }
+/**
+    @title Operator
+    @notice This contract is used to supply and redeem tokens from a tranche.
+            Once a epoch is finalized, the users can 'disburse()' the tokens from the tranche.
 
+ */
 contract Operator is Auth {
     TrancheLike public tranche;
     RestrictedTokenLike public token;
@@ -39,7 +44,8 @@ contract Operator is Auth {
         emit Rely(msg.sender);
     }
 
-    // only investors that are on the memberlist can disburse
+    ///@notice disburse tokens from the tranche. Transfers the pending shares or currency to the investor.
+    ///@dev Only investors that are on the memberlist can disburse
     function disburse() external
         returns(uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken)
     {
@@ -48,6 +54,8 @@ contract Operator is Auth {
         return tranche.disburse(msg.sender);
     }
 
+    ///@notice disburse tokens from the tranche upto a specific completed epoch. Transfers the pending shares or currency to the investor.
+    ///@dev Only investors that are on the memberlist can disburse
     function disburse(uint endEpoch) external
         returns(uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken)
     {
@@ -56,14 +64,16 @@ contract Operator is Auth {
         return tranche.disburse(msg.sender, endEpoch);
     }
 
-    // only investors that are on the memberlist can submit supplyOrders
+    ///@notice submit a supply order to the tranche. Only investors that are on the memberlist can submit supplyOrders
+    ///@param amount the amount of currency to supply.
     function supplyOrder(uint amount) public {
         require((token.hasMember(msg.sender) == true), "user-not-allowed-to-hold-token");
         tranche.supplyOrder(msg.sender, amount);
         emit SupplyOrder(amount, msg.sender);
     }
 
-    // only investors that are on the memberlist can submit redeemOrders
+    ///@notice submit a redeem order to the tranche. Only investors that are on the memberlist can submit redeemOrders
+    ///@param amount the amount of tokens(shares) to redeem.
     function redeemOrder(uint amount) public {
         require((token.hasMember(msg.sender) == true), "user-not-allowed-to-hold-token");
         tranche.redeemOrder(msg.sender, amount);
@@ -84,7 +94,7 @@ contract Operator is Auth {
         redeemOrder(amount);
     }
 
-        // sets the dependency to another contract
+    ///@dev sets the dependency to another contract
     function depend(bytes32 contractName, address addr) public auth {
         if (contractName == "tranche") { tranche = TrancheLike(addr); }
         else if (contractName == "token") { token = RestrictedTokenLike(addr); }

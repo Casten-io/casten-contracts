@@ -44,8 +44,8 @@ interface ReserveLike {
     function payoutForLoans(uint currencyAmount) external;
     function transferFeeOnInterest(uint _amt) external;
     function treasury() external view returns(address);
-    function originationFeePerc() external view returns(address);
-    function feeOnInterestPerc() external view returns(address);
+    function originationFeePerc() external view returns(uint256);
+    function feeOnInterestPerc() external view returns(uint256);
 }
 
 interface SubscriberLike {
@@ -58,6 +58,9 @@ interface SubscriberLike {
 interface AssessorLike {
     function reBalance() external;
 }
+
+///@title Shelf
+///@notice Shelf is the borrower-facing contract. The borrower can interact with this contract to borrow, repay.
 
 contract Shelf is Auth, TitleOwned, Math {
 
@@ -105,8 +108,13 @@ contract Shelf is Auth, TitleOwned, Math {
         return (shelf[loan].registry, shelf[loan].tokenId);
     }
 
-    // issues a new loan in casten - it requires the ownership of an nft
-    // first step in the loan process - everyone could add an nft
+    /**
+        @notice Issues a new loan in casten - it requires the ownership of an nft.
+        @dev Anyone can issue a loan as long as they own the nft. Issued loan is not valid until admin sets the loan params.
+        @param registry_ address of the nft registry
+        @param token_ id of the nft
+        @return loan id
+     */
     function issueLoan(address registry_, uint token_) external returns (uint) {
         require(NFTLike(registry_).ownerOf(token_) == msg.sender, "nft-not-owned");
         bytes32 nft = keccak256(abi.encodePacked(registry_, token_));
@@ -120,11 +128,12 @@ contract Shelf is Auth, TitleOwned, Math {
         return loan;
     }
 
-    // starts the borrow process of a loan
-    // informs the system of the requested currencyAmount
-    // interest accumulation starts with this method
-    // the method can only be called if the nft is locked
-    // a max ceiling needs to be defined by an oracle
+    /**
+        @notice Starts the borrow process of a loan.
+        @dev The method can only be called if the nft is locked. A max ceiling needs to be defined by an oracle.
+        @param loan id of the loan
+        @param currencyAmount amount of currency to borrow
+     */
     function borrow(uint loan, uint currencyAmount) external owner(loan) {
         require(nftLocked(loan), "nft-not-locked");
 
@@ -132,13 +141,13 @@ contract Shelf is Auth, TitleOwned, Math {
             subscriber.borrowEvent(loan, currencyAmount);
         }
 
-        uint previousDebt = pile.previousDebt();
+        uint previousDebt = pile.previousDebt(loan);
         pile.accrue(loan);
 
         uint loanDebt = pile.debt(loan);
         uint interestAccrued = loanDebt - previousDebt;
 
-        uint256 originationFee = currencyAmount.mul(reserve.originationFeePerc()).div(100_00);
+        uint256 originationFee = safeDiv(safeMul(currencyAmount, reserve.originationFeePerc()), 100_00);
         balances[loan] = safeAdd(balances[loan], (currencyAmount - originationFee));
         balance = safeAdd(balance, (currencyAmount - originationFee));
         require(currency.transfer(reserve.treasury(), originationFee), "fee-transfer-failed");
@@ -160,7 +169,10 @@ contract Shelf is Auth, TitleOwned, Math {
     }
 
 
-    // withdraw transfers the currency to the borrower account
+    /// @notice transfers the borrowed amount to the borrower account
+    /// @param loan id of the loan
+    /// @param currencyAmount amount of currency to withdraw
+    /// @param usr address of the borrower
     function withdraw(uint loan, uint currencyAmount, address usr) external owner(loan) {
         require(nftLocked(loan), "nft-not-locked");
         require(currencyAmount <= balances[loan], "withdraw-amount-too-high");
@@ -171,7 +183,10 @@ contract Shelf is Auth, TitleOwned, Math {
         emit Withdraw(loan, currencyAmount, usr);
     }
     
-    // repays the entire or partial debt of a loan
+    /// @notice repays the entire or partial debt of a loan
+    /// @dev On every repayment, as fee is charged on the interest accrued and is transferred to the reserve.
+    /// @param loan id of the loan
+    /// @param currencyAmount amount of currency to repay
     function repayLoan(uint loan, uint currencyAmount) external owner(loan) {
         require(nftLocked(loan), "nft-not-locked");
         require(balances[loan] == 0, "withdraw-required-before-repay");
@@ -180,7 +195,7 @@ contract Shelf is Auth, TitleOwned, Math {
             subscriber.repayEvent(loan, currencyAmount);
         }
 
-        uint previousDebt = pile.previousDebt();
+        uint previousDebt = pile.previousDebt(loan);
         pile.accrue(loan);
         uint loanDebt = pile.debt(loan);
 
@@ -199,7 +214,7 @@ contract Shelf is Auth, TitleOwned, Math {
         assessor.reBalance();
 
         uint debtAfterRepayment = pile.debt(loan);
-        uint feeOnInterest = div(mul(interestAccrued, reserve.feeOnInterestPerc()), 100_00);
+        uint feeOnInterest = safeDiv(safeMul(interestAccrued, reserve.feeOnInterestPerc()), 100_00);
         reserve.transferFeeOnInterest(feeOnInterest);
 
         if(currencyAmount > loanDebt || debtAfterRepayment == 0) {
@@ -211,6 +226,11 @@ contract Shelf is Auth, TitleOwned, Math {
         emit Repay(loan, currencyAmount);
     }
 
+    /**
+        @notice Closes the loan and returns the nft to the borrower.
+        @dev The loan should be repaid in full before closing. The NFT should be unlocked before closing.
+        @param loan id of the loan
+     */
     function close(uint loan) external {
         require(!nftLocked(loan), "nft-locked");
         (address registry, uint tokenId) = token(loan);
@@ -222,8 +242,13 @@ contract Shelf is Auth, TitleOwned, Math {
         emit Close(loan);
     }
 
-    // a collector can recover defaulted loans
-    // it is not required to recover the entire loan debt
+    /**
+        @notice a collector can recover defaulted loans. It is not required to recover the entire loan debt
+        @dev The loan should have 'claim()'ed before calling this method.
+        @param loan id of the loan
+        @param currencyAmount amount of currency to collect
+        @param usr address of the collector
+     */
     function recover(uint loan, address usr, uint currencyAmount) external auth {
         pile.accrue(loan);
 
@@ -258,8 +283,12 @@ contract Shelf is Auth, TitleOwned, Math {
         assessor.reBalance();
     }
 
-    // locks an nft in the shelf
-    // requires an issued loan
+
+    /**
+        @notice locks an nft in the shelf
+        @dev requires an issued loan
+        @param loan id of the loan
+     */
     function lock(uint loan) external owner(loan) {
         if(address(subscriber) != address(0)) {
             subscriber.lockEvent(loan);
@@ -267,9 +296,11 @@ contract Shelf is Auth, TitleOwned, Math {
         NFTLike(shelf[loan].registry).transferFrom(msg.sender, address(this), shelf[loan].tokenId);
         emit Lock(loan);
     }
-
-    // unlocks an nft in the shelf
-    // requires zero debt or 100% write off
+    
+    /**
+        @notice unlocks an nft in the shelf. The loan should be repaid in full or 100% write off.
+        @param loan id of the loan
+     */
     function unlock(uint loan) external owner(loan) {
         // loans can be unlocked and closed when the debt is 0, or the loan is written off 100%
         uint debt_ = pile.debt(loan);
@@ -285,7 +316,7 @@ contract Shelf is Auth, TitleOwned, Math {
         emit Unlock(loan);
     }
 
-     // sets the dependency to another contract
+    ///@dev sets the dependency to another contract
     function depend(bytes32 contractName, address addr) external auth {
         if (contractName == "token") { currency = TokenLike(addr); }
         else if (contractName == "title") { title = TitleLike(addr); }
@@ -308,6 +339,12 @@ contract Shelf is Auth, TitleOwned, Math {
 
     // a loan can be claimed by a collector if the loan debt is above the loan threshold
     // transfers the nft to the collector
+    /**
+        @notice claims a loan if the loan debt is above the loan threshold
+        @dev The loan is assigned by admins to a collector.
+        @param loan id of the loan
+        @param usr address of the collector
+     */
     function claim(uint loan, address usr) public auth {
         NFTLike(shelf[loan].registry).transferFrom(address(this), usr, shelf[loan].tokenId);
         emit Claim(loan, usr);
