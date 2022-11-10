@@ -4,6 +4,12 @@ pragma solidity >=0.7.6;
 import "../lib/casten-math/src/math.sol";
 import "../lib/casten-auth/src/auth.sol";
 
+/**
+    @title Memberlist
+    @notice This contract is used to manage a list of whitelisted investors.
+            The tranche contract uses this list to check if an investor is allowed to invest. 
+ */
+
 contract Memberlist is Math, Auth {
 
     uint constant minimumDelay = 7 days;

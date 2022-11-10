@@ -30,6 +30,13 @@ interface LendingAdapter {
     function debt() external view returns(uint);
 }
 
+/**
+    @title Assessor
+    @notice The tranche token prices are calculated in this contract.
+    When loans defaulted, Junior pool takes the loss first. This contract calculates and rebalances the pool ratios.
+ */
+
+
 contract Assessor is Definitions, Auth, Interest {
     TrancheLike     public seniorTranche;
     TrancheLike     public juniorTranche;
@@ -74,6 +81,7 @@ contract Assessor is Definitions, Auth, Interest {
         emit Rely(msg.sender);
     }
 
+    ///@dev rebalances the senior and junior pool ratios.
     function reBalance() public {
         reBalance(calcExpectedSeniorAsset(seniorBalance_, dripSeniorDebt()));
     }
@@ -114,7 +122,8 @@ contract Assessor is Definitions, Auth, Interest {
     function calcUpdateNAV() external returns (uint) {
         return navFeed.calcUpdateNAV();
     }
-
+    ///@return junior token price
+    ///@return senior token price
     function calcTokenPrices() external view returns (uint, uint) {
         uint epochNAV = getNAV();
         uint epochReserve = reserve.totalBalance();
@@ -172,10 +181,12 @@ contract Assessor is Definitions, Auth, Interest {
         return calcSeniorTokenPrice(getNAV(), reserve.totalBalance());
     }
 
+    ///@return the current senior token price
     function calcSeniorTokenPrice(uint nav_, uint) public view returns(uint) {
         return _calcSeniorTokenPrice(nav_, reserve.totalBalance());
     }
 
+    /// @return the current junior token price
     function calcJuniorTokenPrice() external view returns(uint) {
         return _calcJuniorTokenPrice(getNAV(), reserve.totalBalance());
     }
@@ -213,7 +224,7 @@ contract Assessor is Definitions, Auth, Interest {
         return safeAdd(reserve.totalBalance(), remainingCredit());
     }
 
-    // returns the current NAV
+    /// @return the current NAV
     function getNAV() public view returns(uint) {
         if (block.timestamp >= navFeed.lastNAVUpdate() + maxStaleNAV) {
             return navFeed.currentNAV();
@@ -222,7 +233,7 @@ contract Assessor is Definitions, Auth, Interest {
         return navFeed.latestNAV();
     }
 
-    // changes the total amount available for borrowing loans
+    /// @dev changes the total amount available for borrowing loans
     function changeBorrowAmountEpoch(uint currencyAmount) public auth {
         reserve.file("currencyAvailable", currencyAmount);
     }
@@ -231,8 +242,7 @@ contract Assessor is Definitions, Auth, Interest {
         return reserve.currencyAvailable();
     }
 
-    // returns the current junior ratio protection in the casten
-    // juniorRatio is denominated in RAY (10^27)
+    ///@return the current junior ratio protection in the casten. juniorRatio is denominated in RAY (10^27)
     function calcJuniorRatio() public view returns(uint) {
         uint seniorAsset = safeAdd(seniorDebt(), seniorBalance_);
         uint assets = safeAdd(getNAV(), reserve.totalBalance());
@@ -252,7 +262,7 @@ contract Assessor is Definitions, Auth, Interest {
         return safeSub(ONE, rdiv(seniorAsset, assets));
     }
 
-    // returns the remainingCredit plus a buffer for the interest increase
+    /// @return the remainingCredit plus a buffer for the interest increase
     function remainingCredit() public view returns(uint) {
         if (address(lending) == address(0)) {
             return 0;

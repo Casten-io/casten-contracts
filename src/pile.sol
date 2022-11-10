@@ -5,10 +5,14 @@ pragma solidity >=0.7.6;
 import "./lib/casten-math/src/interest.sol";
 import "./lib/casten-auth/src/auth.sol";
 
-// ## Interest Group based Pile
-// The following is one implementation of a debt module. It keeps track of different buckets of interest rates and is optimized for many loans per interest bucket. It keeps track of interest
-// rate accumulators (chi values) for all interest rate categories. It calculates debt each
-// loan according to its interest rate category and pie value.
+/**
+    @title Pile
+    @notice ## Interest Group based Pile
+            The following is one implementation of a debt module. It keeps track of different buckets of interest rates and is optimized for many loans per interest bucket. It keeps track of interest
+            rate accumulators (chi values) for all interest rate categories. It calculates debt each
+            loan according to its interest rate category and pie value.
+
+ */
 contract Pile is Auth, Interest {
     
     // --- Data ---
@@ -71,7 +75,7 @@ contract Pile is Auth, Interest {
         return loanInfo[loan].interestAccrued;
     }
 
-    // returns the current debt based on actual block.timestamp (now)
+    /// @return the current debt based on actual block.timestamp (now)
     function debt(uint loan) external view returns (uint) {
         uint rate_ = loanRates[loan];
         uint chi_ = rates[rate_].chi;
@@ -81,7 +85,7 @@ contract Pile is Auth, Interest {
         return toAmount(chi_, pie[loan]);
     }
 
-    // returns the total debt of a interest rate group
+    /// @return the total debt of a interest rate group
     function rateDebt(uint rate) external view returns (uint) {
         uint chi_ = rates[rate].chi;
         uint pie_ = rates[rate].pie;
@@ -93,8 +97,12 @@ contract Pile is Auth, Interest {
     }
 
      // --- Public Debt Methods  ---
-    // increases the debt of a loan by a currencyAmount
-    // a change of the loan debt updates the rate debt and total debt
+    /** @dev increases the debt of a loan by a currencyAmount
+        a change of the loan debt updates the rate debt and total debt
+
+        @param loan loan id
+        @param currencyAmount amount of currency to be added to the loan debt
+    */
     function increaseDebt(uint loan, uint currencyAmount) external auth { 
         uint rate = loanRates[loan];
         require(block.timestamp == rates[rate].lastUpdated, "rate-group-not-updated");
@@ -107,8 +115,13 @@ contract Pile is Auth, Interest {
         emit IncreaseDebt(loan, currencyAmount);
     }
 
-    // decrease the loan's debt by a currencyAmount
-    // a change of the loan debt updates the rate debt and total debt
+    /**
+    @dev decrease the loan's debt by a currencyAmount
+        a change of the loan debt updates the rate debt and total debt
+
+        @param loan loan id
+        @param currencyAmount amount of currency to be added to the loan debt
+    */
     function deccreaseDebt(uint loan, uint currencyAmount) external auth {
         uint rate = loanRates[loan];
         require(block.timestamp == rates[rate].lastUpdated, "rate-group-not-updated");
@@ -122,7 +135,7 @@ contract Pile is Auth, Interest {
 
     
 
-    // set/change the interest rate of a rate category
+    /// @dev set/change the interest rate of a rate category
     function file(bytes32 what, uint rate, uint value) external auth {
         if (what == "rate") {
             require(value != 0, "rate-per-second-can-not-be-0");
@@ -140,13 +153,12 @@ contract Pile is Auth, Interest {
         emit File(what, rate, value);
     }
 
-    // accrue needs to be called before any debt amounts are modified by an external component
+    ///@dev accrue needs to be called before any debt amounts are modified by an external component
     function accrue(uint loan) external {
         drip(loanRates[loan]);
     }
 
-    // drip updates the chi of the rate category by compounding the interest and
-    // updates the total debt
+    ///@dev drip updates the chi of the rate category by compounding the interest and updates the total debt
     function drip(uint rate) public {        
         if (block.timestamp >= rates[rate].lastUpdated) {
             (uint chi,) = compounding(rates[rate].chi, rates[rate].ratePerSecond, rates[rate].lastUpdated, rates[rate].pie);
@@ -157,7 +169,7 @@ contract Pile is Auth, Interest {
 
     // --- Interest Rate Group Implementation ---
 
-    // set rate loanRates for a loan
+    ///@dev set rate loanRates for a loan
     function setRate(uint loan, uint rate) external auth {
         require(pie[loan] == 0, "non-zero-debt");
         // rate category has to be initiated
@@ -166,7 +178,7 @@ contract Pile is Auth, Interest {
         emit SetRate(loan, rate);
     }
 
-    // change rate loanRates for a loan
+    ///@dev change rate loanRates for a loan
     function changeRate(uint loan, uint newRate) external auth {
         require(rates[newRate].chi != 0, "rate-group-not-set");
         uint currentRate = loanRates[loan];
