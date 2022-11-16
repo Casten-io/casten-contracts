@@ -38,6 +38,20 @@ Assessor
 [Reserve](https://mumbai.polygonscan.com/address/0x217B4C199CA2cC3949e8c3416bCb777b88fB0fF5#writeContract) 
 
 
+# Tests
+The following command is used to run all the tests under src/test
+```
+dapp test
+```
 
+To run a specific test, 
+```
+dapp test -m test_name -vvvv
+```
+
+To get the coverage data,
+``` 
+dapp test --coverage 
+```
 
 
