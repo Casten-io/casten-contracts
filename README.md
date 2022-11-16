@@ -8,7 +8,18 @@ Currently, top lending protocols in DeFi like Compound, Aave, etc need borrowers
 # Commands
 ```
 dapp build
+
 ```
+
+# Architecture Diagram 
+<img width="931" alt="Screenshot 2022-11-15 at 8 16 11 PM" src="https://user-images.githubusercontent.com/5414766/201948884-1f83eb37-c201-4d10-9a91-1e8df8b8027c.png">
+
+# Contracts Overview
+Shelf - Borrower Facing Contract, borrower creats loan assets and repays through the shelf \
+navFeed - NavFeed handles calculations of the SEN and JUN token prices \
+Assessor 
+
+
 
 # Testnet Contract Addresses
 
