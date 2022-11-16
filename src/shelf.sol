@@ -147,13 +147,14 @@ contract Shelf is Auth, TitleOwned, Math {
         uint loanDebt = pile.debt(loan);
         uint interestAccrued = loanDebt - previousDebt;
 
+        // payout to shelf
+        reserve.payoutForLoans(currencyAmount);
+        
         uint256 originationFee = safeDiv(safeMul(currencyAmount, reserve.originationFeePerc()), 100_00);
         balances[loan] = safeAdd(balances[loan], (currencyAmount - originationFee));
         balance = safeAdd(balance, (currencyAmount - originationFee));
         require(currency.transfer(reserve.treasury(), originationFee), "fee-transfer-failed");
 
-        // payout to shelf
-        reserve.payoutForLoans(currencyAmount);
 
         // increase NAV
         ceiling.borrow(loan, currencyAmount);
