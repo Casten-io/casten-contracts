@@ -18,7 +18,7 @@ contract Borrower {
     }
 
     function issue(address registry, uint nft) public returns (uint loan) {
-        return shelf.issue(registry, nft);
+        return shelf.issueLoan(registry, nft);
     }
 
     function close(uint loan) public {
@@ -39,7 +39,7 @@ contract Borrower {
 
 
     function repay(uint loan, uint currencyAmount) public {
-        shelf.repay(loan, currencyAmount);
+        shelf.repayLoan(loan, currencyAmount);
     }
 
     function withdraw(uint loan, uint currencyAmount, address usr) public {
@@ -57,7 +57,7 @@ contract Borrower {
     }
 
     function repayAction(uint loan, uint currencyAmount) public {
-        shelf.repay(loan, currencyAmount);
+        shelf.repayLoan(loan, currencyAmount);
         shelf.unlock(loan);
     }
 

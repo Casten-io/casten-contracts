@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.7.6;
 
-import "ds-test/test.sol";
-import "./../definitions.sol";
+import "../../lib/ds-test/src/test.sol";
+import "./../../definitions.sol";
 
 contract DefinitionTest is Math, DSTest {
     Definitions def;

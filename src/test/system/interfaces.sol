@@ -54,11 +54,11 @@ interface TReserveLike {
 interface ShelfLike {
     function lock(uint loan) external;
     function unlock(uint loan) external;
-    function issue(address registry, uint token) external returns (uint loan);
+    function issueLoan(address registry, uint token) external returns (uint loan);
     function close(uint loan) external;
     function borrow(uint loan, uint wad) external;
     function withdraw(uint loan, uint wad, address usr) external;
-    function repay(uint loan, uint wad) external;
+    function repayLoan(uint loan, uint wad) external;
     function shelf(uint loan) external returns(address registry,uint256 tokenId,uint price,uint principal, uint initial);
     function file(bytes32 what, uint loan, address registry, uint nft) external;
 }

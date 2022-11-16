@@ -57,5 +57,22 @@ contract ReserveMock is Mock, Auth {
         values_uint["deposit_amount"] = amount;
         currency.transferFrom(address(this), msg.sender, amount);
     }
+
+    function originationFeePerc() public view returns (uint) {
+        return values_return["originationFeePerc"];
+    }
+
+    function treasury() public view returns (address) {
+        return values_address_return["treasury"];
+    }
+
+    function feeOnInterestPerc() public view returns (uint) {
+        return values_return["feeOnInterestPerce"];
+    }
+
+    function transferFeeOnInterest(uint amount) public {
+        values_uint["transferFeeOnInterest"] = amount;
+        currency.transferFrom(address(this), values_address_return["treasury"], amount);
+    }
 }
 

@@ -56,7 +56,7 @@ contract CloseTest is BaseSystemTest {
 
     function testFailCloseLoanNoPermissions() public {
         (uint tokenId, bytes32 lookupId) = issueNFT(randomUser_);
-        shelf.issue(collateralNFT_, tokenId);
+        shelf.issueLoan(collateralNFT_, tokenId);
         // borrower not loanOwner or nftOwner
         closeLoan(123, lookupId);
     }

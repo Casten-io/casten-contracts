@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.7.6;
 
-import "ds-test/test.sol";
+import "../../lib/ds-test/src/test.sol";
 
-import "./../assessor.sol";
-import "./../admin/pool.sol";
+import "./../../assessor.sol";
+import "./../../admin/PoolAdmin.sol";
 import "./mock/coordinator.sol";
 import "./mock/navFeed.sol";
 import "./mock/memberlist.sol";
@@ -100,12 +100,6 @@ contract PoolGovernancePoolAdminTest is DSTest {
         setMinSeniorRatio(); 
     }
 
-    function testSetMaxAutoHeal() public {
-        uint autoHeal = 50000000000000000000;
-        poolAdmin.setMaxAutoHeal(autoHeal);
-        assertEq(lending.values_uint("file_value"), autoHeal);
-        assertEq(lending.values_bytes32("file_name"),"autoHealMax");
-    }
 
     function setMaxSeniorRatio() public {
         uint maxSeniorRatio = 0.8 * 10**27;

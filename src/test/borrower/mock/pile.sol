@@ -41,16 +41,31 @@ contract PileMock is Mock {
         return call("pie");
     }
 
-    function incDebt(uint loan, uint currencyAmount) public {
+    function increaseDebt(uint loan, uint currencyAmount) public {
         values_uint["incDebt_loan"] = loan;
         values_uint["incDebt_currencyAmount"] = currencyAmount;
-        calls["incDebt"]++;
+        calls["increaseDebt"]++;
     }
 
-    function decDebt(uint loan, uint currencyAmount) public {
+    function deccreaseDebt(uint loan, uint currencyAmount) public {
         values_uint["decDebt_loan"] = loan;
         values_uint["decDebt_currencyAmount"] = currencyAmount;
-        calls["decDebt"]++;
+        calls["decreaseDebt"]++;
+    }
+
+    function previousDebt(uint loan) public view returns(uint) {
+        return values_return["prevDebt_loan"];
+    }
+
+    function getTotalInterestAccrued(uint loan) public view returns(uint) {
+        return values_return["totalInterestAccrued_loan"];
+    }
+
+    function setLoanInfo(uint loan, uint debt, uint newInterest) public {
+        values_uint["setLoanInfo_loan"] = loan;
+        values_uint["setLoanInfo_debt"] = debt;
+        values_uint["setLoanInfo_newInterest"] = newInterest;
+        calls["setLoanInfo"]++;
     }
 
     function accrue(uint loan) public {

@@ -42,7 +42,7 @@ contract ShelfTest is DSTest {
         title.setReturn("issue", loan_);
         title.setReturn("ownerOf", address(this));
 
-        uint loanId = shelf.issue(address(nft), tokenId_);
+        uint loanId = shelf.issueLoan(address(nft), tokenId_);
         assertEq(loanId, loan_);
         assertEq(shelf.nftlookup(keccak256(abi.encodePacked(address(nft), tokenId_))), loan_);
     }
@@ -59,11 +59,11 @@ contract ShelfTest is DSTest {
 
     function _borrow(uint loan_, uint currencyAmount_) internal {
         shelf.borrow(loan_, currencyAmount_);
-        assertEq(currency.calls("transferFrom"), 1);
+        assertEq(currency.calls("transferFrom"), 2);
 
         assertEq(ceiling.calls("borrow"), 1);
         assertEq(pile.calls("accrue"), 1);
-        assertEq(pile.calls("incDebt"), 1);
+        assertEq(pile.calls("increaseDebt"), 1);
         assertEq(shelf.balance(), currencyAmount_);
         uint loanBalance = shelf.balances(loan_);
         assertEq(loanBalance, currencyAmount_);
@@ -79,7 +79,7 @@ contract ShelfTest is DSTest {
         shelf.withdraw(loan_, currencyAmount_, address(this));
         assertEq(totalBalance-currencyAmount_, shelf.balance());
         assertEq(loanBalance-currencyAmount_, shelf.balances(loan_));
-        assertEq(currency.calls("transferFrom"), 2);
+        assertEq(currency.calls("transferFrom"), 3);
         assertEq(currency.values_address("transferFrom_from"), address(shelf));
         assertEq(currency.values_address("transferFrom_to"), address(this));
         assertEq(currency.values_uint("transferFrom_amount"), currencyAmount_);
@@ -87,27 +87,27 @@ contract ShelfTest is DSTest {
 
     function _repay(uint loan_, uint currencyAmount_) internal {
         pile.setReturn("debt_loan", currencyAmount_);
-        shelf.repay(loan_, currencyAmount_);
+        shelf.repayLoan(loan_, currencyAmount_);
 
         assertEq(pile.calls("accrue"), 2);
-        assertEq(pile.calls("decDebt"), 1);
+        assertEq(pile.calls("decreaseDebt"), 1);
         assertEq(shelf.balance(), 0);
         assertEq(shelf.balances(loan_), 0);
         assertEq(ceiling.calls("repay"), 1);
-        assertEq(currency.calls("transferFrom"), 4);
+        assertEq(currency.calls("transferFrom"), 6);
         // last transfer from
-        assertEq(currency.values_address("transferFrom_from"), address(shelf));
-        assertEq(currency.values_address("transferFrom_to"), address(reserve));
-        assertEq(currency.values_uint("transferFrom_amount"), currencyAmount_);
+        assertEq(currency.values_address("transferFrom_from"), address(reserve));
+        assertEq(currency.values_address("transferFrom_to"), address(reserve.treasury()));
+        assertEq(currency.values_uint("transferFrom_amount"), currencyAmount_ * reserve.feeOnInterestPerc() / 100_00);
     }
 
     function _recover(uint loan_, address usr_, uint currencyAmount_, uint debt_) internal {
         pile.setReturn("debt_loan", debt_);
         shelf.recover(loan_, usr_, currencyAmount_);
         assertEq(pile.calls("accrue"), 2);
-        assertEq(pile.calls("decDebt"), 1);
+        assertEq(pile.calls("decreaseDebt"), 1);
 
-        assertEq(currency.calls("transferFrom"), 4);
+        assertEq(currency.calls("transferFrom"), 5);
         assertEq(currency.values_address("transferFrom_from"), address(shelf));
         assertEq(currency.values_address("transferFrom_to"), address(reserve));
         assertEq(currency.values_uint("transferFrom_amount"), currencyAmount_);
@@ -206,7 +206,7 @@ contract ShelfTest is DSTest {
         title.setReturn("issue", secondLoan);
         title.setReturn("ownerOf", address(this));
 
-        uint loanId = shelf.issue(address(nft), tokenId);
+        uint loanId = shelf.issueLoan(address(nft), tokenId);
         assertEq(loanId, secondLoan);
         nft.setReturn("ownerOf", secondLoan);
         assertEq(shelf.nftlookup(keccak256(abi.encodePacked(address(nft), tokenId))), secondLoan);

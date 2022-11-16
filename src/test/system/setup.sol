@@ -3,8 +3,8 @@ pragma solidity >=0.7.6;
 pragma experimental ABIEncoderV2;
 
 import { TitleFab } from "../../factories/title.sol";
-import { ShelfFab } from "../../factories/shelf.sol";
-import { PileFab } from "../../factories/pile.sol";
+import { ShelfFactory } from "../../factories/shelf.sol";
+import { PileFactory } from "../../factories/pile.sol";
 import { TestNAVFeedFab } from "../borrower/factories/navfeed.tests.sol";
 import { BorrowerDeployer } from "../../deployers/BorrowerDeployer.sol";
 
@@ -20,14 +20,14 @@ import { Memberlist } from "../../token/memberlist.sol";
 // import { Clerk } from "../../lender/adapters/mkr/clerk.sol";
 
 
-import { TrancheFab } from "../../factories/tranche.sol";
-import { RestrictedTokenFab } from "../../factories/restrictedtoken.sol";
-import { MemberlistFab } from "../../factories/memberlist.sol";
-import { AssessorFab } from "../../factories/assessor.sol";
-import { PoolAdminFab } from "../../factories/pooladmin.sol";
-import { ReserveFab } from "../../factories/reserve.sol";
-import { CoordinatorFab } from "../../factories/coordinator.sol";
-import { OperatorFab } from "../../factories/operator.sol";
+import { TrancheFactory } from "../../factories/tranche.sol";
+import { RestrictedTokenFactory } from "../../factories/restrictedtoken.sol";
+import { MemberlistFactory } from "../../factories/memberlist.sol";
+import { AssessorFactory } from "../../factories/assessor.sol";
+import { PoolAdminFactory } from "../../factories/pooladmin.sol";
+import { ReserveFactory } from "../../factories/reserve.sol";
+import { CoordinatorFactory } from "../../factories/coordinator.sol";
+import { OperatorFactory } from "../../factories/operator.sol";
 import { LenderDeployer } from "../../deployers/LenderDeployer.sol";
 
 // MKR
@@ -135,8 +135,8 @@ abstract contract TestSetup is Config {
 
     //mkr adapter
     SimpleMkr mkr;
-    AdapterDeployer public adapterDeployer;
-    Clerk public clerk;
+    // AdapterDeployer public adapterDeployer;
+    // Clerk public clerk;
 
     address public lenderDeployerAddr;
 
@@ -189,8 +189,8 @@ abstract contract TestSetup is Config {
 
     function deployBorrower(CastenConfig memory config) internal {
         TitleFab titlefab = new TitleFab();
-        ShelfFab shelffab = new ShelfFab();
-        PileFab pileFab = new PileFab();
+        ShelfFactory shelffab = new ShelfFactory();
+        PileFactory pileFab = new PileFactory();
         address navFeedFab_;
         navFeedFab_ = address(new TestNAVFeedFab());
 
@@ -224,29 +224,29 @@ abstract contract TestSetup is Config {
 
     function prepareMKRLenderDeployer(address rootAddr, address trancheFab, address memberlistFab, address restrictedTokenFab,
         address reserveFab, address coordinatorFab, address operatorFab, address poolAdminFab) public virtual {
-        AssessorFab assessorFab = new AssessorFab();
-        ClerkFab clerkFab = new ClerkFab();
+        // AssessorFactory assessorFab = new AssessorFactory();
+        // ClerkFab clerkFab = new ClerkFab();
 
-        adapterDeployer = new AdapterDeployer(rootAddr, address(clerkFab), address(0));
+        // adapterDeployer = new AdapterDeployer(rootAddr, address(clerkFab), address(0));
 
-        lenderDeployer = new LenderDeployer(rootAddr, currency_, address(trancheFab), address(memberlistFab),
-            address(restrictedTokenFab), address(reserveFab), address(assessorFab), address(coordinatorFab),
-            address(operatorFab), address(poolAdminFab), address(0), address(adapterDeployer));
-        lenderDeployerAddr = address(lenderDeployer);
+        // lenderDeployer = new LenderDeployer(rootAddr, currency_, address(trancheFab), address(memberlistFab),
+        //     address(restrictedTokenFab), address(reserveFab), address(assessorFab), address(coordinatorFab),
+        //     address(operatorFab), address(poolAdminFab), address(0), address(adapterDeployer));
+        // lenderDeployerAddr = address(lenderDeployer);
 
         return;
 
     }
 
     function prepareDeployLender(address rootAddr, bool mkrAdapter) public virtual {
-        ReserveFab reserveFab = new ReserveFab();
-        AssessorFab assessorFab = new AssessorFab();
-        PoolAdminFab poolAdminFab = new PoolAdminFab();
-        TrancheFab  trancheFab = new TrancheFab();
-        MemberlistFab memberlistFab = new MemberlistFab();
-        RestrictedTokenFab restrictedTokenFab = new RestrictedTokenFab();
-        OperatorFab operatorFab = new OperatorFab();
-        CoordinatorFab coordinatorFab = new CoordinatorFab();
+        ReserveFactory reserveFab = new ReserveFactory();
+        AssessorFactory assessorFab = new AssessorFactory();
+        PoolAdminFactory poolAdminFab = new PoolAdminFactory();
+        TrancheFactory  trancheFab = new TrancheFactory();
+        MemberlistFactory memberlistFab = new MemberlistFactory();
+        RestrictedTokenFactory restrictedTokenFab = new RestrictedTokenFactory();
+        OperatorFactory operatorFab = new OperatorFactory();
+        CoordinatorFactory coordinatorFab = new CoordinatorFactory();
 
         // deploy lender deployer for mkr adapter
         if(mkrAdapter) {
@@ -314,14 +314,14 @@ abstract contract TestSetup is Config {
         fetchContractAddr(ld);
 
         if (mkrAdapter) {
-            adapterDeployer.deployClerk(address(ld));
-            clerk = Clerk(adapterDeployer.clerk());
+            // adapterDeployer.deployClerk(address(ld));
+            // clerk = Clerk(adapterDeployer.clerk());
 
-            VatMock vat = new VatMock();
-            SpotterMock spotter = new SpotterMock();
-            spotter.setReturn("mat", config.mkrMAT);
+            // VatMock vat = new VatMock();
+            // SpotterMock spotter = new SpotterMock();
+            // spotter.setReturn("mat", config.mkrMAT);
 
-            adapterDeployer.wireClerk(address(mkr), address(mkr), address(spotter), address(mkr.jugMock()), 0.01 * 10**27);
+            // adapterDeployer.wireClerk(address(mkr), address(mkr), address(spotter), address(mkr.jugMock()), 0.01 * 10**27);
         }
     }
 }

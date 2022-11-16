@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.7.6;
 
-import "ds-test/test.sol";
+import "../../lib/ds-test/src/test.sol";
 
-import "./../admin/member.sol";
+import "./../../admin/MemberAdmin.sol";
 import "./mock/memberlist.sol";
 
 
