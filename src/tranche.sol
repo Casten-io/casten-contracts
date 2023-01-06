@@ -101,8 +101,10 @@ contract Tranche is Math, Auth, FixedPoint {
 
     ///@dev Used by operator to supply currency or revoke supply to the tranche
     ///@param usr The user that is supplying currency
+    ///@param funder Address from which tokens are transferred in and excess tokens are transferred to.
+    ///usr and funder are same unless depositing from vault.
     ///@param newSupplyAmount The amount of currency to supply. If entered a value less than previous supply, the difference will be revoked
-    function supplyOrder(address usr, uint newSupplyAmount) public auth orderAllowed(usr) {
+    function supplyOrder(address usr, address funder, uint newSupplyAmount) public auth orderAllowed(usr) {
         users[usr].orderedInEpoch = coordinator.currentEpoch();
 
         uint currentSupplyAmount = users[usr].supplyCurrencyAmount;
@@ -114,19 +116,21 @@ contract Tranche is Math, Auth, FixedPoint {
         uint delta;
         if (newSupplyAmount > currentSupplyAmount) {
             delta = safeSub(newSupplyAmount, currentSupplyAmount);
-            require(currency.transferFrom(usr, address(this), delta), "currency-transfer-failed");
+            require(currency.transferFrom(funder, address(this), delta), "currency-transfer-failed");
             return;
         }
         delta = safeSub(currentSupplyAmount, newSupplyAmount);
         if (delta > 0) {
-            _safeTransfer(currency, usr, delta);
+            _safeTransfer(currency, funder, delta);
         }
     }
 
     ///@dev Used by operator to redeem tokens or revoke redemption of tokens
     ///@param usr The user that is redeeming tokens
+    ///@param funder Address from which tokens are transferred in and excess tokens are transferred to.
+    ///usr and funder are same unless depositing from vault.
     ///@param newRedeemAmount The amount of tokens to redeem. If entered a value less than previous redemption amount, the difference will be revoked
-    function redeemOrder(address usr, uint newRedeemAmount) public auth orderAllowed(usr) {
+    function redeemOrder(address usr, address funder, uint newRedeemAmount) public auth orderAllowed(usr) {
         users[usr].orderedInEpoch = coordinator.currentEpoch();
 
         uint currentRedeemAmount = users[usr].redeemTokenAmount;
@@ -136,13 +140,13 @@ contract Tranche is Math, Auth, FixedPoint {
         uint delta;
         if (newRedeemAmount > currentRedeemAmount) {
             delta = safeSub(newRedeemAmount, currentRedeemAmount);
-            require(token.transferFrom(usr, address(this), delta), "token-transfer-failed");
+            require(token.transferFrom(funder, address(this), delta), "token-transfer-failed");
             return;
         }
 
         delta = safeSub(currentRedeemAmount, newRedeemAmount);
         if (delta > 0) {
-            _safeTransfer(token, usr, delta);
+            _safeTransfer(token, funder, delta);
         }
     }
 
@@ -197,8 +201,9 @@ contract Tranche is Math, Auth, FixedPoint {
 
     ///@dev the disburse function can be used after an epoch is over to receive currency and tokens
     ///@param usr The user that is disburing
-    function disburse(address usr) public auth returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
-        return disburse(usr, coordinator.lastEpochExecuted());
+    ///@param receiver Address to receive currency and token
+    function disburse(address usr, address receiver) public auth returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
+        return disburse(usr, coordinator.lastEpochExecuted(), receiver);
     }
 
     function _safeTransfer(ERC20Like erc20, address usr, uint amount) internal returns(uint) {
@@ -213,7 +218,8 @@ contract Tranche is Math, Auth, FixedPoint {
     ///@dev the disburse function can be used after an epoch is over to receive currency and tokens
     ///@param usr The user that is disburing
     ///@param endEpoch The epoch until which the disburse should be calculated
-    function disburse(address usr,  uint endEpoch) public auth returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
+    ///@param receiver Address to receive currency and token
+    function disburse(address usr,  uint endEpoch, address receiver) public auth returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency, uint remainingRedeemToken) {
         require(users[usr].orderedInEpoch <= coordinator.lastEpochExecuted(), "epoch-not-executed-yet");
 
         uint lastEpochExecuted = coordinator.lastEpochExecuted();
@@ -233,11 +239,11 @@ contract Tranche is Math, Auth, FixedPoint {
 
 
         if (payoutCurrencyAmount > 0) {
-            payoutCurrencyAmount = _safeTransfer(currency, usr, payoutCurrencyAmount);
+            payoutCurrencyAmount = _safeTransfer(currency, receiver, payoutCurrencyAmount);
         }
 
         if (payoutTokenAmount > 0) {
-            payoutTokenAmount = _safeTransfer(token, usr, payoutTokenAmount);
+            payoutTokenAmount = _safeTransfer(token, receiver, payoutTokenAmount);
         }
         return (payoutCurrencyAmount, payoutTokenAmount, remainingSupplyCurrency, remainingRedeemToken);
     }

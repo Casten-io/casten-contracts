@@ -4,10 +4,10 @@ pragma solidity >=0.7.6;
 import "./lib/casten-auth/src/auth.sol";
 
 interface TrancheLike {
-    function supplyOrder(address usr, uint currencyAmount) external;
-    function redeemOrder(address usr, uint tokenAmount) external;
-    function disburse(address usr) external returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken);
-    function disburse(address usr, uint endEpoch) external returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken);
+    function supplyOrder(address usr, address funder, uint currencyAmount) external;
+    function redeemOrder(address usr, address funder, uint tokenAmount) external;
+    function disburse(address usr, address receiver) external returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken);
+    function disburse(address usr, uint endEpoch, address receiver) external returns (uint payoutCurrencyAmount, uint payoutTokenAmount, uint remainingSupplyCurrency,  uint remainingRedeemToken);
     function currency() external view returns (address);
 }
 
@@ -51,7 +51,7 @@ contract Operator is Auth {
     {
         require((token.hasMember(msg.sender) == true), "user-not-allowed-to-hold-token");
         emit Disburse(msg.sender);
-        return tranche.disburse(msg.sender);
+        return tranche.disburse(msg.sender, msg.sender);
     }
 
     ///@notice disburse tokens from the tranche upto a specific completed epoch. Transfers the pending shares or currency to the investor.
@@ -61,14 +61,14 @@ contract Operator is Auth {
     {
         require((token.hasMember(msg.sender) == true), "user-not-allowed-to-hold-token");
         emit Disburse(msg.sender);
-        return tranche.disburse(msg.sender, endEpoch);
+        return tranche.disburse(msg.sender, endEpoch, msg.sender);
     }
 
     ///@notice submit a supply order to the tranche. Only investors that are on the memberlist can submit supplyOrders
     ///@param amount the amount of currency to supply.
     function supplyOrder(uint amount) public {
         require((token.hasMember(msg.sender) == true), "user-not-allowed-to-hold-token");
-        tranche.supplyOrder(msg.sender, amount);
+        tranche.supplyOrder(msg.sender, msg.sender, amount);
         emit SupplyOrder(amount, msg.sender);
     }
 
@@ -76,7 +76,7 @@ contract Operator is Auth {
     ///@param amount the amount of tokens(shares) to redeem.
     function redeemOrder(uint amount) public {
         require((token.hasMember(msg.sender) == true), "user-not-allowed-to-hold-token");
-        tranche.redeemOrder(msg.sender, amount);
+        tranche.redeemOrder(msg.sender, msg.sender, amount);
         emit RedeemOrder(amount, msg.sender);
     }
 
