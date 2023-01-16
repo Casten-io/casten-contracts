@@ -1,10 +1,10 @@
-pragma solidity 0.8.13;
+pragma solidity ^0.7.0;
 
 contract BaseExchangeAdapter {
     address public exchange;
     address spender;
 
-    error NOT_IMPLEMENTED();
+    // error NOT_IMPLEMENTED();
     
     constructor(address _exchange, address _spender) {
         exchange = _exchange;
@@ -18,7 +18,8 @@ contract BaseExchangeAdapter {
         uint256 minReceive, 
         bytes calldata data
     ) external virtual view returns(address _exchange, uint256 _value, bytes memory _transaction) {
-        revert NOT_IMPLEMENTED(); 
+        // revert NOT_IMPLEMENTED(); 
+        revert("NOT_INITALIZED");
     }
 
     function getSpender() external virtual view returns (address) {

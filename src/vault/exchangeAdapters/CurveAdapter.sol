@@ -1,4 +1,4 @@
-pragma solidity 0.8.13;
+pragma solidity ^0.7.0;
 import "./BaseExchangeAdapter.sol"; 
 
 contract CurveAdapter is BaseExchangeAdapter {
@@ -6,12 +6,10 @@ contract CurveAdapter is BaseExchangeAdapter {
     address admin;
     mapping(address => int128) public curveId;
 
-    error NOT_AUTHORIZED();
+    // error NOT_AUTHORIZED();
 
     modifier onlyAdmin {
-        if(msg.sender != admin) {
-            revert NOT_AUTHORIZED();
-        }
+        require(msg.sender == admin, "NOT_AUTHORIZED");
         _;
     }
 

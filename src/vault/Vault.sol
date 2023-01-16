@@ -1,4 +1,4 @@
-pragma solidity >=0.8.0;
+pragma solidity ^0.7.0;
 
 interface ERC20Like {
     function balanceOf(address) external view returns (uint);
@@ -37,23 +37,19 @@ contract Vault {
     uint8 private _initialized;
 
 
-    error CALL_FAILED();
-    error NOT_AUTHORIZED();
-    error ALREADY_INITALIZED();
+    // error CALL_FAILED();
+    // error NOT_AUTHORIZED();
+    // error ALREADY_INITALIZED();
 
 
     modifier Initializer {
-        if(_initialized != 0) {
-            revert ALREADY_INITALIZED();
-        }
+        require(_initialized == 0, "ALREADY_INITALIZED");
         _initialized = 1;
         _;   
     }
 
     modifier onlyAdmin {
-        if(msg.sender != admin) {
-            revert NOT_AUTHORIZED();
-        }
+        require(msg.sender == admin, "NOT_AUTHORIZED");
         _;
     }
 
@@ -85,38 +81,27 @@ contract Vault {
         seniorToken.approve(address(_junior), type(uint256).max);
     }
 
+    function supplyAdmin(
+        address[] memory users, 
+        uint256[] memory amounts, 
+        uint256[] memory minCurrencyOuts,
+        bool[] memory isSenior
+    ) external onlyAdmin {
+        for(uint256 i=0; i<users.length; i++) {
+            if(isSenior[i]) {
+                _supplySenior(users[i], amounts[i], minCurrencyOuts[i]);
+            } else {
+                _supplyJunior(users[i], amounts[i], minCurrencyOuts[i]);
+            }
+        }
+    }
+
     function supplyJunior(uint256 amount, uint256 minCurrencyOut) external {
-        currency.transferFrom(msg.sender, address(this), amount); //TODO use safeTransfer
-        (
-            address exchange,
-            ,
-            bytes memory tradeData
-        ) = tradeAdapter.getTradeData(
-            address(currency), address(baseCurrency), amount, minCurrencyOut, ""
-        );
-
-        _call(exchange, tradeData, 0);
-
-        juniorTranche.supplyOrder(msg.sender, address(this), amount);
-
-        _returnCurrency(msg.sender);
+        _supplyJunior(msg.sender, amount, minCurrencyOut);
     }
 
     function supplySenior(uint256 amount, uint256 minCurrencyOut) external {
-        currency.transferFrom(msg.sender, address(this), amount);
-        
-        (
-            address exchange,
-            ,
-            bytes memory tradeData
-        ) = tradeAdapter.getTradeData(
-            address(currency), address(baseCurrency), amount, minCurrencyOut, ""
-        );
-
-        _call(exchange, tradeData, 0);
-
-        seniorTranche.supplyOrder(msg.sender, address(this), amount);
-        _returnCurrency(msg.sender);
+        _supplySenior(msg.sender, amount, minCurrencyOut);
     }
 
     function redeemSenior(uint256 amount) external {
@@ -155,6 +140,40 @@ contract Vault {
         //transfer tranche tokens
         _returnToken(juniorToken, msg.sender);
 
+    }
+
+    function _supplySenior(address _user, uint256 amount, uint256 minCurrencyOut) internal {
+        currency.transferFrom(_user, address(this), amount);
+        
+        (
+            address exchange,
+            ,
+            bytes memory tradeData
+        ) = tradeAdapter.getTradeData(
+            address(currency), address(baseCurrency), amount, minCurrencyOut, ""
+        );
+
+        _call(exchange, tradeData, 0);
+
+        seniorTranche.supplyOrder(_user, address(this), amount);
+        _returnCurrency(_user);
+    }
+
+    function _supplyJunior(address _user, uint256 amount, uint256 minCurrencyOut) internal {
+        currency.transferFrom(_user, address(this), amount); //TODO use safeTransfer
+        (
+            address exchange,
+            ,
+            bytes memory tradeData
+        ) = tradeAdapter.getTradeData(
+            address(currency), address(baseCurrency), amount, minCurrencyOut, ""
+        );
+
+        _call(exchange, tradeData, 0);
+
+        juniorTranche.supplyOrder(_user, address(this), amount);
+
+        _returnCurrency(_user);
     }
 
     ///@dev swaps the excecss USDC(if-any) to MAI and transfers it back to msg.sender
@@ -196,8 +215,6 @@ contract Vault {
 
     function _call(address _target, bytes memory _data, uint256 _value) internal {
         (bool result, ) = _target.call{value: _value}(_data);
-        if(!result) {
-            revert CALL_FAILED();
-        }
+        require(result, "CALL_FAILED");
     }
 }
